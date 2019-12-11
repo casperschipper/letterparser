@@ -1,0 +1,135 @@
+module Main exposing (Model, Msg(..), init, main, update, view)
+
+-- Press buttons to increment and decrement a counter.
+--
+-- Read how it works:
+--   https://guide.elm-lang.org/architecture/buttons.html
+--
+
+import Browser
+import Dict
+import Html exposing (Html, button, div, text)
+import Html.Events exposing (onClick)
+
+
+
+-- MAIN
+
+
+main =
+    Browser.sandbox { init = init, update = update, view = view }
+
+
+
+-- MODEL
+
+
+type alias Model =
+    { input : String
+    , fieldDict : Dict.Dict Field String
+    }
+
+
+init : Model
+init =
+    { input = ""
+    , fieldDict = Dict.empty
+    }
+
+
+
+-- UPDATE
+
+
+type Msg
+    = InputText String
+    | UpdateField Field String
+    | Apply
+
+
+type Field
+    = FieldA
+    | FieldB
+    | FieldC
+    | FieldD
+    | FieldE
+    | FieldF
+    | FieldG
+    | FieldH
+    | FieldI
+
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        InputText string ->
+            { model | input = string }
+
+        UpdateField field string ->
+            { model | fieldDict = Empty.insert FieldA string model.fieldDict }
+
+
+
+-- VIEW
+
+
+allFields : List Field
+allFields =
+    [ FieldA
+    , FieldB
+    , FieldC
+    , FieldD
+    , FieldE
+    , FieldF
+    , FieldG
+    , FieldH
+    , FieldI
+    ]
+
+
+asString : Field -> String
+asString field =
+    case field of
+        FieldA ->
+            "A"
+
+        FieldB ->
+            "B"
+
+        FieldC ->
+            "C"
+
+        FieldD ->
+            "D"
+
+        FieldE ->
+            "E"
+
+        FieldF ->
+            "F"
+
+        FieldG ->
+            "G"
+
+        FieldH ->
+            "H"
+
+        FieldI ->
+            "J"
+
+
+view : Model -> Html Msg
+view model =
+    let
+        makeField : Field -> Html Msg
+        makeField field =
+            label []
+                [ text <| "field " ++ asString field ]
+                , input [ onInput <| UpdateField field ] []
+                ]
+    in
+    div []
+        [ textarea [ onInput InputText ] []
+        , List.map makeField allFields
+        , button [ onClick parse ] [ text "parse" ]
+        ]
