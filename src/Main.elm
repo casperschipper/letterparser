@@ -3,7 +3,7 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 import Browser
 import Dict
 import Html exposing (Html, br, button, div, input, label, p, text, textarea)
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (class, cols, rows)
 import Html.Events exposing (onClick, onInput)
 
 
@@ -208,13 +208,18 @@ view model =
         makeSymbol : Symbol -> Html Msg
         makeSymbol field =
             label []
-                [ text <| "field: " ++ asString field
+                [ text <| "symbol " ++ asString field
                 , input [ onInput <| UpdateSymbol field ] []
                 , br [] []
                 ]
     in
     div []
-        [ textarea [ onInput InputText ] []
+        [ textarea
+            [ onInput InputText
+            , cols 30
+            , rows 20
+            ]
+            []
         , div [ class "symbols" ] <| List.map makeSymbol allSymbols
         , button [ onClick Parse ] [ text "parse" ]
         , p [] [ text model.result ]

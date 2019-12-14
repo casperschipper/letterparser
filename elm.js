@@ -5462,6 +5462,12 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			$elm$json$Json$Encode$string(string));
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
+var $elm$html$Html$Attributes$cols = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'cols',
+		$elm$core$String$fromInt(n));
+};
 var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$label = _VirtualDom_node('label');
@@ -5516,6 +5522,12 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
 var $elm$html$Html$p = _VirtualDom_node('p');
+var $elm$html$Html$Attributes$rows = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'rows',
+		$elm$core$String$fromInt(n));
+};
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$textarea = _VirtualDom_node('textarea');
@@ -5527,7 +5539,7 @@ var $author$project$Main$view = function (model) {
 			_List_fromArray(
 				[
 					$elm$html$Html$text(
-					'field: ' + $author$project$Main$asString(field)),
+					'symbol ' + $author$project$Main$asString(field)),
 					A2(
 					$elm$html$Html$input,
 					_List_fromArray(
@@ -5548,7 +5560,9 @@ var $author$project$Main$view = function (model) {
 				$elm$html$Html$textarea,
 				_List_fromArray(
 					[
-						$elm$html$Html$Events$onInput($author$project$Main$InputText)
+						$elm$html$Html$Events$onInput($author$project$Main$InputText),
+						$elm$html$Html$Attributes$cols(30),
+						$elm$html$Html$Attributes$rows(20)
 					]),
 				_List_Nil),
 				A2(
