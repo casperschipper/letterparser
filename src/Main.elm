@@ -3,7 +3,7 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 import Browser
 import Dict
 import Html exposing (Html, br, button, div, input, label, p, text, textarea)
-import Html.Attributes exposing (class, cols, rows)
+import Html.Attributes exposing (class, cols, rows, style)
 import Html.Events exposing (onClick, onInput)
 
 
@@ -21,17 +21,23 @@ main =
 
 type alias Model =
     { input : String
-    , symbolDict : Dict.Dict Char String
+    , symbolDict : Dict.Dict String String
     , result : String
+    , program : List String
     }
 
 
 init : Model
 init =
-    { input = ""
-    , symbolDict = Dict.empty
-    , result = ""
-    }
+    let
+        m =
+            { input = ""
+            , symbolDict = Dict.empty
+            , result = ""
+            , program = []
+            }
+    in
+    update (UpdateProgram "a -> aba\nb->bbabbc\nc->cccca") m
 
 
 
@@ -42,6 +48,8 @@ type Msg
     = InputText String
     | UpdateSymbol Symbol String
     | Parse
+    | RunProgram
+    | UpdateProgram String
 
 
 type Symbol
@@ -54,6 +62,59 @@ type Symbol
     | G
     | H
     | I
+    | SPACE
+    | ILLEGAL
+
+
+type Statement
+    = Statement String String -- from to
+
+
+fromString : String -> Maybe Statement
+fromString input =
+    let
+        onlyTwo : List a -> Maybe (List a)
+        onlyTwo xs =
+            case xs of
+                [ x, y ] ->
+                    Just [ x, y ]
+
+                _ ->
+                    Nothing
+
+        split1 =
+            onlyTwo << String.split "->"
+
+        split2 =
+            onlyTwo << String.split ">"
+
+        killHeadSpace : String -> String
+        killHeadSpace str =
+            case String.uncons str of
+                Just ( ' ', rest ) ->
+                    killHeadSpace rest
+
+                Just _ ->
+                    str
+
+                Nothing ->
+                    str
+
+        killSpace : String -> String
+        killSpace =
+            String.reverse << killHeadSpace << String.reverse << killHeadSpace
+    in
+    case oneOf split1 split2 input of
+        Just [ from, to ] ->
+            let
+                _ =
+                    Debug.log "from -> to" ( from, to )
+            in
+            Just <|
+                Statement (killSpace from) (killSpace to)
+
+        _ ->
+            Nothing
 
 
 update : Msg -> Model -> Model
@@ -63,10 +124,47 @@ update msg model =
             { model | input = string }
 
         UpdateSymbol symbol string ->
-            { model | symbolDict = Dict.insert (asChar symbol) string model.symbolDict }
+            { model | symbolDict = Dict.insert (asString symbol) string model.symbolDict }
 
         Parse ->
             { model | result = eval model.symbolDict model.input }
+
+        UpdateProgram string ->
+            let
+                split =
+                    String.split "\n"
+            in
+            { model | program = split string }
+
+        RunProgram ->
+            case model.program of
+                [] ->
+                    model
+
+                -- foldr : (a -> b -> b) -> b -> List a -> b
+                -- foldr :
+                program ->
+                    let
+                        statements =
+                            List.filterMap fromString program
+
+                        oneFold : Statement -> String -> String
+                        oneFold statement current =
+                            let
+                                ( from, to ) =
+                                    case statement of
+                                        Statement f t ->
+                                            ( f, t )
+
+                                -- _ =
+                                --     Debug.log "f,t" <| String.replace from to current
+                            in
+                            String.replace from to current
+
+                        result =
+                            List.foldr oneFold model.input (List.reverse statements)
+                    in
+                    { model | input = result }
 
 
 fromChar : Char -> Symbol
@@ -99,8 +197,48 @@ fromChar char =
         'i' ->
             I
 
+        ' ' ->
+            SPACE
+
         _ ->
+            ILLEGAL
+
+
+symbolFromString : String -> Symbol
+symbolFromString str =
+    case str of
+        "a" ->
             A
+
+        "b" ->
+            B
+
+        "c" ->
+            C
+
+        "d" ->
+            D
+
+        "e" ->
+            E
+
+        "f" ->
+            F
+
+        "g" ->
+            G
+
+        "h" ->
+            H
+
+        "i" ->
+            I
+
+        " " ->
+            SPACE
+
+        _ ->
+            ILLEGAL
 
 
 firstChar : String -> Char
@@ -118,18 +256,18 @@ asChar =
     firstChar << asString
 
 
-eval : Dict.Dict Char String -> String -> String
+eval : Dict.Dict String String -> String -> String
 eval fields input =
     let
         keys : List Symbol
         keys =
-            List.map fromChar <| Dict.keys fields
+            List.map symbolFromString <| Dict.keys fields
 
         getValue : Symbol -> String
         getValue symbol =
             let
                 try =
-                    Dict.get (asChar symbol) fields
+                    Dict.get (asString symbol) fields
             in
             case try of
                 Nothing ->
@@ -153,6 +291,21 @@ eval fields input =
     String.concat <| pipe input
 
 
+oneOf : (String -> Maybe a) -> (String -> Maybe a) -> String -> Maybe a
+oneOf parse1 parse2 input =
+    case parse1 input of
+        Nothing ->
+            case parse2 input of
+                Nothing ->
+                    Nothing
+
+                result ->
+                    result
+
+        something ->
+            something
+
+
 
 -- VIEW
 
@@ -168,6 +321,8 @@ allSymbols =
     , G
     , H
     , I
+    , SPACE
+    , ILLEGAL
     ]
 
 
@@ -184,22 +339,28 @@ asString field =
             "c"
 
         D ->
-            "e"
+            "d"
 
         E ->
-            "f"
+            "e"
 
         F ->
             "f"
 
         G ->
-            "h"
+            "g"
 
         H ->
-            "i"
+            "h"
 
         I ->
-            "j"
+            "i"
+
+        SPACE ->
+            "space"
+
+        ILLEGAL ->
+            "illegal"
 
 
 view : Model -> Html Msg
@@ -214,12 +375,30 @@ view model =
                 ]
     in
     div []
-        [ textarea
-            [ onInput InputText
-            , cols 30
-            , rows 20
+        [ label []
+            [ text "program"
+            , textarea
+                [ onInput UpdateProgram
+                , rows 10
+                , cols 100
+                , style "display" "block"
+                ]
+                []
+            , button [ onClick RunProgram ] [ text "run program" ]
             ]
-            []
+        , br [] []
+        , label []
+            [ text "Current / Startstring"
+            , textarea
+                [ onInput InputText
+                , style "display" "block"
+                , rows 10
+                , cols 100
+                , Html.Attributes.value model.input
+                ]
+                []
+            , p [] [ text <| String.fromInt <| String.length model.input ]
+            ]
         , div [ class "symbols" ] <| List.map makeSymbol allSymbols
         , button [ onClick Parse ] [ text "parse" ]
         , p [] [ text model.result ]
